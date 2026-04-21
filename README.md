@@ -1,5 +1,7 @@
 # Shadow-Browser
-A high-tier custom implementation of the Mullvad Browser, routing all browser traffic through the ShadowNet.
+A high-tier custom implementation of the Mullvad Browser, routing all browser traffic through the ShadowNet. 
+
+For Kali Linux/Parrot OS (other linux distros)
 
 Shadow Browser: Signal Erasure Implementation
 
