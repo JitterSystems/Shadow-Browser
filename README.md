@@ -66,6 +66,12 @@ Prerequisites:
 
 Linux, gcc, tor, and the Mullvad Browser portable binary in shadow-browser/.
 
+Download the official stable mullvad browser portable binary for linux
+
+https://mullvad.net/en/download/browser/linux
+
+Place it in the same shadow-browser directory folder and then run this
+
     Permissions: chmod +x install.sh 
 
                  chmod +x uninstall.sh
