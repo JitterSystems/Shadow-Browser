@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Shadow Browser
+Comment=Mullvad via ShadowNet Routing
+Exec=bash -c "cd %k && ./shadow_launcher.sh"
+Icon=shadow-icon
+Terminal=true
+Type=Application
+Categories=Network;WebBrowser;Security;
