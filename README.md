@@ -70,7 +70,7 @@ Download the official stable mullvad browser portable binary for linux
 
 https://mullvad.net/en/download/browser/linux
 
-Place it in the same shadow-browser directory folder and then run this
+Place the mullvad-browser folder in the shadow-browser directory folder and then run this
 
     Permissions: chmod +x install.sh 
 
