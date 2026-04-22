@@ -3,6 +3,11 @@ A high-tier custom implementation of the Mullvad Browser, routing all browser tr
 
 For Kali Linux/Parrot OS (other linux distros)
 
+Note; If you have the Mullvad Browser already installed on your machine, changing the security level
+on the Shadow Browser will cause the Shadow Browser to reopen with the mullvad browser icon and name.
+This does not stop the shadownet running in the browser, but it does changes the browser's name to mullvad
+and the icon. To stop this, mullvad browser must not be installed. I am working on a way to fix this error.
+
 Shadow Browser: Signal Erasure Implementation
 
 Shadow Browser is a custom implementation of the Mullvad Browser, hardened with the ShadowNet Engine. While standard privacy browsers focus on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
