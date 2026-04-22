@@ -58,7 +58,7 @@ if [[ $EUID -eq 0 ]]; then
 	echo "AutomapHostsOnResolve 1" >> "$TORRC_FILE"
 	echo "LongLivedPorts 21,22,706,1863,5050,5190,5222,5223,6667,6697,8300" >> "$TORRC_FILE"
 	echo "CircuitBuildTimeout 60" >> "$TORRC_FILE"
-	echo "NumEntryGuards 3" >> ""$TORRC_FILE""
+	echo "NumEntryGuards 3" >> "$TORRC_FILE"
 	
 	echo -e "${GREEN}[+] Establishing 6-Hop Circuitry...${NC}"
 	tor -f "$TORRC_FILE" > /dev/null 2>&1 &
@@ -69,16 +69,40 @@ if [[ $EUID -eq 0 ]]; then
 	# Inject Shadow Rules
 	cp /opt/shadow-browser/shadow_rules.js "$BROWSER_PROFILE/user.js"
 	
-	# --- Launch ---
-	echo -e "${BLUE}[!] ShadowNet Fully Active. Launching Shadow Browser...${NC}"
-	# Note: Icon handling is generally done via the .desktop file or window manager,
-	# but the command below remains the exact same as your previous version.
-	"$BROWSER_BIN" --profile "$BROWSER_PROFILE" --no-remote --name "Shadow Browser" --class "Shadow Browser" --icon "$ICON_URL" > /dev/null 2>&1
-	
-	# --- Surgical Teardown ---
-	echo -e "${RED}[-] Browser closed. Tearing down ShadowNet & Jitter...${NC}"
-	sudo kill -9 $ENGINE_PID $HEARTBEAT_PID $TOR_PID 2>/dev/null
-	sudo killall -9 shadow_pulse shadow_noise 2>/dev/null 
-	
-	sudo rm -rf "$SHADOW_DIR"
-	echo -e "${GREEN}[V] Traces erased.${NC}"
+	# --- Launch Loop ---
+	# FIX: Added process verification to prevent infinite relaunch loops
+	while true; do
+		# Check if a process is ALREADY running before launching
+		if pgrep -f "mullvad-browser" > /dev/null; then
+			echo -e "${GREEN}[*] Browser Active. Monitoring ShadowNet Shield...${NC}"
+			sleep 5
+			continue
+			fi
+			
+			echo -e "${BLUE}[!] ShadowNet Fully Active. Launching Shadow Browser...${NC}"
+			# Use explicit path to ensure it doesn't open the system-default browser
+			"$BROWSER_BIN" --profile "$BROWSER_PROFILE" --no-remote --name "Shadow Browser" --class "Shadow Browser" --icon "$ICON_URL" > /dev/null 2>&1 &
+			
+			# Critical Cooldown: Give the browser time to initialize so pgrep catches it
+			sleep 8
+			
+			# Monitoring phase: wait until the browser is actually closed
+			while pgrep -f "mullvad-browser" > /dev/null; do
+				sleep 2
+				done
+				
+				# Final check: Did it close for good, or is it restarting for a security level change?
+				sleep 3
+				if ! pgrep -f "mullvad-browser" > /dev/null; then
+					# If after 3 seconds nothing is running, the user manually quit
+					break
+					fi
+					done
+					
+					# --- Surgical Teardown ---
+					echo -e "${RED}[-] Browser closed. Tearing down ShadowNet & Jitter...${NC}"
+					sudo kill -9 $ENGINE_PID $HEARTBEAT_PID $TOR_PID 2>/dev/null
+					sudo killall -9 shadow_pulse shadow_noise 2>/dev/null 
+					
+					sudo rm -rf "$SHADOW_DIR"
+					echo -e "${GREEN}[V] Traces erased.${NC}"
