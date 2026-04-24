@@ -3,10 +3,8 @@ A high-tier custom implementation of the Mullvad Browser, routing all browser tr
 
 For Kali Linux/Parrot OS (other linux distros)
 
-Note; If you have the Mullvad Browser already installed on your machine, changing the security level
-on the Shadow Browser will cause the Shadow Browser to reopen with the mullvad browser icon and name.
-This does not stop the shadownet running in the browser, but it does changes the browser's name to mullvad
-and the icon. To stop this, mullvad browser must not be installed. I am working on a way to fix this error.
+Note: For ultimate privacy and anonymity, route your whole system-wide traffic through ShadowNet and then use
+the Shadow Browser. This will increase your OPSEC as you are jittering the jitter.
 
 Shadow Browser: Signal Erasure Implementation
 
