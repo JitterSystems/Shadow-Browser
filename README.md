@@ -8,7 +8,7 @@ the Shadow Browser. This will increase your OPSEC as you are jittering the jitte
 
 Shadow Browser: Signal Erasure Implementation
 
-Shadow Browser is a custom implementation of the Mullvad Browser, hardened with the ShadowNet Engine. While standard privacy browsers focus on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
+Shadow Browser is a custom implementation of the Mullvad Browser, hardened with the ShadowNet Engine. While standard privacy browsers only focuses on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
 
 🛡️ Sovereign Integration
 
