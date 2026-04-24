@@ -37,7 +37,8 @@ ShadowNet Signal Erasure
     Killswitch:
 
     If tor, the cover traffic or the engine stops, the browser will be killed and exited immediately preventing any
-    data leaks
+    data leaks. If you are using shadownet system wide and using the shadow browser at the same time, the browser will be killed
+    if the system wide shadownet is stopped as well.
 
     Mouse/Clicks/Scrolling/Typing:
 
