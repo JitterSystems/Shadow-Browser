@@ -36,6 +36,16 @@ ShadowNet Signal Erasure
     
     Forced 6-node circuit depth for exponential path anonymity.
 
+    Killswitch:
+
+    If tor, the cover traffic or the engine stops, the browser will be killed and exited immediately preventing any
+    data leaks
+
+    Mouse/Clicks/Scrolling/Typing:
+
+    Added entropy IAT (Inter arrival time) to the key board typing input, added fake mouse movements and click delays and also
+    added entropy IAT to the scrolling and fake scroll movements.
+
 Mullvad Browser Foundation
 
     Custom Implementation: 
