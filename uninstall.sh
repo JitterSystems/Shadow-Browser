@@ -12,7 +12,6 @@ if [[ $EUID -ne 0 ]]; then
 	fi
 	
 	echo -e "${RED}[*] Terminating active ShadowNet proxies and noise engines...${NC}"
-	# Only kill the specific Tor instance spawned by Shadow Browser, not system Tor
 	pkill -f 'shadownet_engine' 2>/dev/null
 	pkill -f 'heartbeat' 2>/dev/null
 	pkill -f 'tor -f /tmp/shadow_browser_session/torrc' 2>/dev/null
@@ -24,7 +23,7 @@ if [[ $EUID -ne 0 ]]; then
 	
 	echo -e "${RED}[*] Erasing Desktop Shortcuts & System Icons...${NC}"
 	rm -f /usr/share/applications/shadow-browser.desktop
-	rm -f /usr/share/pixmaps/shadow-icon.jpg
+	rm -f /usr/share/pixmaps/shadow.png
 	
 	echo -e "${GREEN}[V] Shadow Browser and its temporary files have been completely removed.${NC}"
 	echo -e "${BLUE}[*] Note: The host system's Tor installation remains untouched and fully operational.${NC}"
