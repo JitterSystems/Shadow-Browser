@@ -99,6 +99,12 @@ Place the mullvad-browser folder in the shadow-browser directory folder and then
 
     PLEASE DO NOT USE SUDO TO LAUNCH BROWSER!!!
 
+    Can you use ShadowNet System-wide and the Shadow Browser at the same time?
+
+    Yes you can. If you are already running shadownet system-wide, the shadow browser will automatically
+    use the system-wide's engines instead of the local browser shadownet. If you are not running
+    shadownet already, the shadow browser will of course use the local shadownet within the configurations.
+
 ⚖️ Sovereign Disclaimer
 
 "There is nothing that the Sovereigns haven't seen." Shadow Browser is a tool for Unlinkability. By combining the "Mask" of Mullvad with the "Cloak" of ShadowNet, it ensures that your presence on the network is as invisible as your identity
