@@ -45,6 +45,30 @@ ShadowNet Signal Erasure
     Added entropy IAT (Inter arrival time) to the key board typing input, added fake mouse movements and click delays and also
     added entropy IAT to the scrolling and fake scroll movements.
 
+    Persona Entropy (Each Session)
+
+    For every session, you will be assigned 1 of three personas. "Deliberate", "Aggressive" or "Stochastic". Deliberate is a slow jitter persona, Aggressive is a faster jitter persona and Stochastic is completely randomized.
+
+    Temporal drift & clock skew erasure:
+
+    Added a jitter delay to every action you do within the browser, making it hard to figure out your system time
+    just from your browser events as well as your timing for the actions. 100ms has been applied to the rendering, this
+    makes it harder for website owners and the GPA/NSA to figure out your hardware based on the unique timing of your
+    CPU and RAM speed.
+
+    WEB-GL protection & Canvas Spoofing:
+
+    You get a new canvas fingerprinting identity and web-gl is set to read-only to prevent it snitching on your hardware
+
+    Screen Resolution Protection:
+
+    A standard viewpoint is assigned to you, even if you maximize the browser it'll not leak your computer's actual
+    screen resolution.
+
+    Generic Linux:
+
+    reports as a hardened linux machine.
+
 Mullvad Browser Foundation
 
     Custom Implementation: 
