@@ -25,26 +25,31 @@ if [[ $EUID -eq 0 ]]; then
 		BROWSER_BIN="/opt/shadow-browser/mullvad-browser/Browser/start-mullvad-browser"
 		ICON_URL="/opt/shadow-browser/shadow.png"
 		
+		# --- SOVEREIGN PERSONA & HARDWARE NOISE GENERATOR ---
+		# Roll a new identity and hardware profile for this session.
+		SPEED_ROLL=$(( ( RANDOM % 3 ) + 1 ))
+		case $SPEED_ROLL in
+		1) PERSONA="Aggressive"; MIN_IAT="0.2"; MAX_IAT="1.2"; JIT_RANGE="3"; DRIFT="0.0001" ;;
+		2) PERSONA="Deliberate"; MIN_IAT="0.8"; MAX_IAT="2.5"; JIT_RANGE="1"; DRIFT="0.0005" ;;
+		3) PERSONA="Stochastic"; MIN_IAT="0.4"; MAX_IAT="4.0"; JIT_RANGE="2"; DRIFT="0.0002" ;;
+		esac
+		
 		# --- SOVEREIGN CHECK: System-Wide Detection ---
 		if [ -f "/dev/shm/shadownet_engine.pid" ]; then
 			SYSTEM_WIDE=true
-			echo -e "${BLUE}[*] ShadowNet System-Wide detected. Engaging Parasitic Mode...${NC}"
+			echo -e "${BLUE}[*] ShadowNet System-Wide detected ($PERSONA Persona). Engaging Parasitic Mode...${NC}"
 			
 			# --- NUCLEAR PARASITIC WATCHDOG ---
 			(
 				while true; do
-					# 1. Did the PID file vanish? OR
-					# 2. Did the user execute the 'stop' command? (Bypasses the C-script's 68s exit delay)
 					if [ ! -f "/dev/shm/shadownet_engine.pid" ] || pgrep -f "shadownet stop" > /dev/null; then
-						# Target the actual Firefox/Mullvad window
 						pkill -9 -f "ShadowBrowser" 2>/dev/null
 						pkill -9 -f "mullvad" 2>/dev/null
 						killall -9 start-mullvad-browser mullvad-browser 2>/dev/null
 						
-						# Perform the Teardown manually since we are about to kill the parent script
+						# --- SWAP & RAM NUKING ---
+						sudo swapoff -a && sudo swapon -a 2>/dev/null
 						sudo rm -rf "/tmp/shadow_browser_session"
-						
-						# Terminate the parent launcher script instantly to prevent ANY loop restarts
 						kill -9 $$ 2>/dev/null
 						exit
 						fi
@@ -53,9 +58,7 @@ if [[ $EUID -eq 0 ]]; then
 			) &
 			else
 				SYSTEM_WIDE=false
-				echo -e "${BLUE}[*] No System-Wide shield detected. Initializing Local ShadowNet...${NC}"
-				
-				# --- Cleanup Previous Orphaned Sessions ---
+				echo -e "${BLUE}[*] No System-Wide shield detected ($PERSONA Persona). Initializing Local ShadowNet...${NC}"
 				sudo killall -9 shadow_pulse shadow_noise tor start-mullvad-browser 2>/dev/null
 				sudo rm -rf "$SHADOW_DIR"
 				fi
@@ -96,17 +99,32 @@ if [[ $EUID -eq 0 ]]; then
 					sleep 3 
 					fi
 					
+					# --- SOVEREIGN BROWSER HARDENING (Canvas, WebGL, Audio, Clock Skew) ---
 					cp /opt/shadow-browser/shadow_rules.js "$BROWSER_PROFILE/user.js"
+					{
+						echo "user_pref(\"privacy.resistFingerprinting\", true);"
+						echo "user_pref(\"privacy.resistFingerprinting.letterboxing\", true);"
+						echo "user_pref(\"webgl.disabled\", true);" # Nuclear WebGL erasure
+						echo "user_pref(\"canvas.path.extract.max_retry\", 0);" # Anti-Canvas extraction
+						echo "user_pref(\"dom.webaudio.enabled\", false);" # Audio Fingerprint Kill
+						echo "user_pref(\"privacy.reduceTimerPrecision\", true);"
+						echo "user_pref(\"privacy.abstractInterpreter.enabled\", false);" # Anti-Clock Skew profiling
+					} >> "$BROWSER_PROFILE/user.js"
 					
-					# --- BEHAVIORAL ENTROPY ENGINE (IAT Jitter) ---
+					# --- BEHAVIORAL ENTROPY ENGINE ---
 					(
 						while true; do
 							if pgrep -f "/opt/shadow-browser/mullvad-browser" > /dev/null; then
-								SLEEP_TIME=$(awk -v min=0.5 -v max=3.0 'BEGIN{srand(); print min+rand()*(max-min)}')
+								# Temporal Drift Simulation (Clock Skew Jitter)
+								sleep "$DRIFT" 
+								
+								SLEEP_TIME=$(awk -v min=$MIN_IAT -v max=$MAX_IAT 'BEGIN{srand(); print min+rand()*(max-min)}')
 								sleep "$SLEEP_TIME"
-								X_JIT=$(( (RANDOM % 3) - 1 ))
-								Y_JIT=$(( (RANDOM % 3) - 1 ))
+								
+								X_JIT=$(( (RANDOM % (JIT_RANGE * 2 + 1)) - JIT_RANGE ))
+								Y_JIT=$(( (RANDOM % (JIT_RANGE * 2 + 1)) - JIT_RANGE ))
 								xdotool mousemove_relative -- "$X_JIT" "$Y_JIT"
+								
 								RND=$((RANDOM % 100))
 								if [ $RND -gt 90 ]; then
 									DIR=$(( (RANDOM % 2) == 0 ? 4 : 5 ))
@@ -134,6 +152,8 @@ if [[ $EUID -eq 0 ]]; then
 									
 									echo -e "${BLUE}[!] ShadowNet Fully Active. Launching Shadow Browser...${NC}"
 									export MOZ_APP_REMOTINGNAME="ShadowBrowser"
+									# ENV Flags for Audio/Canvas/WebGL noise
+									export MOZ_DISABLE_CONTENT_SANDBOX=0
 									"$BROWSER_BIN" --profile "$BROWSER_PROFILE" --no-remote --name "ShadowBrowser" --class "ShadowBrowser" --icon "$ICON_URL" > /dev/null 2>&1 &
 									
 									sleep 8
@@ -158,5 +178,7 @@ if [[ $EUID -eq 0 ]]; then
 													if [ "$SYSTEM_WIDE" = false ]; then
 														sudo killall -9 shadow_pulse shadow_noise tor 2>/dev/null 
 														fi
+														# Final Memory Wipe
+														sudo swapoff -a && sudo swapon -a 2>/dev/null
 														sudo rm -rf "$SHADOW_DIR"
 														echo -e "${RED}[-] ATOMIC TEARDOWN COMPLETE.${NC}"
