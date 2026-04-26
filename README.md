@@ -69,6 +69,11 @@ ShadowNet Signal Erasure
 
     reports as a hardened linux machine.
 
+    Enhanced torrc config:
+
+    NewCircuitPeriod, MaxCircuitDirtiness and EnforceDistinctSubnets has been set to 1 to ensure that tor never builds a circuit
+    with relays within the same subnet and also making sure that your ip/circuit changes every 1 second (or 1-30 seconds)
+
 Mullvad Browser Foundation
 
     Custom Implementation: 
