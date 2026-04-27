@@ -46,12 +46,14 @@ double get_dns_iat() {
 }
 
 int main(int argc, char *argv[]) {
-	int max_mtu = (argc > 1) ? atoi(argv[1]) : 1200;
+	// Forced MTU Clamping between 900 and 1100
+	int max_mtu = (rand() % (1100 - 900 + 1)) + 900;
 	const char *destinations[] = {"76.76.2.2", "76.76.10.2", "182.222.222.222", "45.11.45.11", "84.200.69.80", "84.200.70.40"};
 	const char *fake_domains[] = {"google.com", "bing.com", "duckduckgo.com", "protonmail.com", "github.com"};
 	int num_dests = 6;
 	int num_domains = 5;
 
+	int urandom_fd = open("/dev/urandom", O_RDONLY);
 	srand(time(NULL));
 
 	int sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
@@ -84,18 +86,19 @@ int main(int argc, char *argv[]) {
 			udph->source = htons(49152 + (rand() % 16383));
 			udph->dest = htons(53); udph->len = htons(sizeof(struct udphdr) + 32);
 			char *dns_data = packet + sizeof(struct iphdr) + sizeof(struct udphdr);
-			dns_data[0] = rand() % 255; dns_data[1] = rand() % 255; dns_data[2] = 0x01;
-			strcpy(dns_data + 12, fake_domains[rand() % num_domains]);
+
+			read(urandom_fd, dns_data, 32);
+			dns_data[2] = 0x01;
+
 			sendto(sock, packet, iph->tot_len, 0, (struct sockaddr *)&sin, sizeof(sin));
 			last_dns_time = curr_time;
 		}
 
-		// --- MODIFIED BURST LOGIC ---
 		int burst_size = 10 + (rand() % 13);
 		for(int b = 0; b < burst_size; b++) {
-			// Randomize chunk sizes per-packet (within MTU constraints)
-			int jittered_payload_size = (rand() % (max_mtu - 64 + 1)) + 64 - 42;
-			if (jittered_payload_size < 64) jittered_payload_size = 64;
+			// Recalculate per-packet to ensure strict 900-1100 range
+			int current_mtu_limit = (rand() % (1100 - 900 + 1)) + 900;
+			int jittered_payload_size = current_mtu_limit - 42;
 
 			memset(packet, 0, 4096);
 			iph->ihl = 5; iph->version = 4; iph->tos = 0;
@@ -110,10 +113,12 @@ int main(int argc, char *argv[]) {
 			udph->len = htons(sizeof(struct udphdr) + jittered_payload_size);
 			udph->check = 0;
 
-			// Inter-arrival Delay between chunks (Sub-millisecond Entropy)
+			char *payload = packet + sizeof(struct iphdr) + sizeof(struct udphdr);
+			read(urandom_fd, payload, jittered_payload_size);
+
 			struct timespec chunk_iat;
 			chunk_iat.tv_sec = 0;
-			chunk_iat.tv_nsec = (rand() % 50000); // 0-50 microsecond IAT
+			chunk_iat.tv_nsec = (rand() % 50000);
 			nanosleep(&chunk_iat, NULL);
 
 			sendto(sock, packet, iph->tot_len, 0, (struct sockaddr *)&sin, sizeof(sin));
