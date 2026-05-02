@@ -8,6 +8,7 @@
 #include <netinet/udp.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <net/if.h>
 
 unsigned short csum(unsigned short *ptr, int nbytes) {
 	long sum;
@@ -46,18 +47,19 @@ double get_dns_iat() {
 }
 
 int main(int argc, char *argv[]) {
-	// Forced MTU Clamping between 900 and 1100
-	int max_mtu = (rand() % (1100 - 900 + 1)) + 900;
-	const char *destinations[] = {"76.76.2.2", "76.76.10.2", "182.222.222.222", "45.11.45.11", "84.200.69.80", "84.200.70.40"};
-	const char *fake_domains[] = {"google.com", "bing.com", "duckduckgo.com", "protonmail.com", "github.com"};
-	int num_dests = 6;
-	int num_domains = 5;
-
-	int urandom_fd = open("/dev/urandom", O_RDONLY);
 	srand(time(NULL));
+	int urandom_fd = open("/dev/urandom", O_RDONLY);
+	if(urandom_fd < 0) exit(1);
 
 	int sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
 	if(sock < 0) exit(1);
+
+	// Explicit Bind to Lokinet Interface
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+	snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "lokitun0");
+	setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr));
+
 	int one = 1;
 	setsockopt(sock, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one));
 
@@ -67,15 +69,21 @@ int main(int argc, char *argv[]) {
 
 	struct sockaddr_in sin;
 	sin.sin_family = AF_INET;
+	sin.sin_addr.s_addr = inet_addr("127.0.0.1");
 
 	struct timespec req, rem;
 	time_t last_dns_time = time(NULL);
 
 	while(1) {
-		time_t curr_time = time(NULL);
-		int dest_idx = rand() % num_dests;
-		sin.sin_addr.s_addr = inet_addr(destinations[dest_idx]);
+		// --- PRE-RANDOMIZATION ENTROPY IAT ---
+		struct timespec pre_iat;
+		pre_iat.tv_sec = 0;
+		pre_iat.tv_nsec = (rand() % 50000000);
+		nanosleep(&pre_iat, NULL);
 
+		time_t curr_time = time(NULL);
+
+		// Simulated DNS-over-Lokinet Entropy
 		if(difftime(curr_time, last_dns_time) > get_dns_iat()) {
 			memset(packet, 0, 4096);
 			iph->ihl = 5; iph->version = 4; iph->tos = 0;
@@ -84,7 +92,8 @@ int main(int argc, char *argv[]) {
 			iph->protocol = IPPROTO_UDP; iph->daddr = sin.sin_addr.s_addr;
 			iph->check = csum((unsigned short *) packet, iph->tot_len);
 			udph->source = htons(49152 + (rand() % 16383));
-			udph->dest = htons(53); udph->len = htons(sizeof(struct udphdr) + 32);
+			udph->dest = htons(1090);
+			udph->len = htons(sizeof(struct udphdr) + 32);
 			char *dns_data = packet + sizeof(struct iphdr) + sizeof(struct udphdr);
 
 			read(urandom_fd, dns_data, 32);
@@ -94,22 +103,23 @@ int main(int argc, char *argv[]) {
 			last_dns_time = curr_time;
 		}
 
+		// Chaff HTTP/2 Randomization Burst
 		int burst_size = 10 + (rand() % 13);
 		for(int b = 0; b < burst_size; b++) {
-			// Recalculate per-packet to ensure strict 900-1100 range
-			int current_mtu_limit = (rand() % (1100 - 900 + 1)) + 900;
+			// MTU Clamping between 1200 and 1400
+			int current_mtu_limit = (rand() % (1400 - 1200 + 1)) + 1200;
 			int jittered_payload_size = current_mtu_limit - 42;
 
 			memset(packet, 0, 4096);
 			iph->ihl = 5; iph->version = 4; iph->tos = 0;
 			iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + jittered_payload_size;
-			iph->id = htons(rand() % 65535); iph->frag_off = 0; iph->ttl = 128;
+			iph->id = htons(rand() % 65535); iph->frag_off = 0; iph->ttl = 64 + (rand() % 64);
 			iph->protocol = IPPROTO_UDP;
 			iph->daddr = sin.sin_addr.s_addr;
 			iph->check = csum((unsigned short *) packet, iph->tot_len);
 
 			udph->source = htons(443);
-			udph->dest = htons(443);
+			udph->dest = htons(1090);
 			udph->len = htons(sizeof(struct udphdr) + jittered_payload_size);
 			udph->check = 0;
 
@@ -124,6 +134,7 @@ int main(int argc, char *argv[]) {
 			sendto(sock, packet, iph->tot_len, 0, (struct sockaddr *)&sin, sizeof(sin));
 		}
 
+		// --- POST-RANDOMIZATION ENTROPY IAT ---
 		double jitter = get_entropy_jitter();
 		req.tv_sec = 0;
 		req.tv_nsec = (long)(jitter * 1000000000.0);
