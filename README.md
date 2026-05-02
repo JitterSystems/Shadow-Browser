@@ -27,8 +27,7 @@ ShadowNet Signal Erasure
 
     DNS Requests/Data Entropy:
     
-    Every dns requests received and sent has an entropy IAT. Fake dns data is sent to known companies as well
-    to trick the observer.
+    Every dns requests received and sent has an entropy IAT.
 
     6-Hop Routing: 
     
@@ -71,8 +70,7 @@ ShadowNet Signal Erasure
 
     Enhanced torrc config:
 
-    NewCircuitPeriod, MaxCircuitDirtiness and EnforceDistinctSubnets has been set to 1 to ensure that tor never builds a circuit
-    with relays within the same subnet and also making sure that your ip/circuit changes every 1 second (or 1-30 seconds)
+    NewCircuitPeriod 1, MaxCircuitDirtiness 1, EnforceDistinctSubnets 1 IsolateClientAddr, IsolateClientProtocol, IsolateSOCKSAuth, CircuitPadding 1, ConnectionPadding 1, ReducedConnectionPadding 0 & ReducedCircuitPadding 0 
 
 Mullvad Browser Foundation
 
