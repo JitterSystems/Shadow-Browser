@@ -37,30 +37,26 @@ esac
 if [ -f "/dev/shm/shadownet_engine.pid" ]; then
     SYSTEM_WIDE=true
     echo -e "${BLUE}[*] ShadowNet System-Wide detected ($PERSONA Persona). Engaging Parasitic Mode...${NC}"
-
-    (
-        while true; do
-            if [ ! -f "/dev/shm/shadownet_engine.pid" ] || pgrep -f "shadownet stop" > /dev/null; then
-                pkill -9 -f "ShadowBrowser" 2>/dev/null
-                pkill -9 -f "mullvad" 2>/dev/null
-                killall -9 start-mullvad-browser mullvad-browser 2>/dev/null
-                sudo swapoff -a && sudo swapon -a 2>/dev/null
-                sudo rm -rf "/tmp/shadow_browser_session"
-                kill -9 $$ 2>/dev/null
-                exit
-            fi
-            sleep 0.2
-        done
-    ) &
 else
     SYSTEM_WIDE=false
     echo -e "${BLUE}[*] No System-Wide shield detected ($PERSONA Persona). Initializing Local ShadowNet...${NC}"
-    sudo killall -9 shadow_pulse shadow_noise tor start-mullvad-browser 2>/dev/null
+    sudo killall -9 shadow_pulse shadow_noise tor lokinet start-mullvad-browser 2>/dev/null
     sudo rm -rf "$SHADOW_DIR"
 fi
 
 mkdir -p "$TOR_DATA"
 mkdir -p "$BROWSER_PROFILE"
+
+# --- WIPE AND OVERRIDE LOKINET.INI ---
+sudo bash -c 'cat <<EOF > /var/lib/lokinet/lokinet.ini
+[network]
+enabled=true
+
+[dns]
+
+
+[router]
+EOF'
 
 # --- Binary Isolation Logic ---
 echo -e "${GREEN}[+] Compiling Signal Erasure Engines (Isolated)...${NC}"
@@ -71,18 +67,35 @@ gcc /opt/shadow-browser/shadownet_engine.c -o /opt/shadow-browser/shadow_noise 2
 if [ "$SYSTEM_WIDE" = false ]; then
     echo -e "${GREEN}[+] Engaging Temporal Jitter & UDP Noise...${NC}"
     sudo /opt/shadow-browser/shadow_noise 76.76.2.2 > /dev/null 2>&1 &
-    sudo /opt/shadow-browser/shadow_pulse 1100 > /dev/null 2>&1 &
 
-    # EXTRA ENTROPY IAT BEFORE PHASE 1
+    # EXTRA ENTROPY IAT DELAY (1)
     IAT_PRE_PHASE1=$(( ( RANDOM % 10 ) + 5 ))
     echo -e "${BLUE}[*] Extra entropy IAT delay: ${IAT_PRE_PHASE1}s...${NC}"
     sleep $IAT_PRE_PHASE1
+
+    # ADDITIONAL ENTROPY IAT (2)
+    ADD_IAT1=$(( ( RANDOM % 8 ) + 3 ))
+    echo -e "${BLUE}[*] Additional entropy IAT delay: ${ADD_IAT1}s...${NC}"
+    sleep $ADD_IAT1
+
+    # START LOKINET SERVICES
+    echo -e "${BLUE}[*] Starting Lokinet Services...${NC}"
+    sudo systemctl start lokinet
+
+    # WAIT FOR LOKITUN0 INTERFACE
+    while ! ip addr show lokitun0 &> /dev/null; do sleep 1; done
+
+    sudo /opt/shadow-browser/shadow_pulse 1400 > /dev/null 2>&1 &
+
+    # ADDITIONAL ENTROPY IAT (3)
+    ADD_IAT2=$(( ( RANDOM % 12 ) + 4 ))
+    echo -e "${BLUE}[*] Additional entropy IAT delay: ${ADD_IAT2}s...${NC}"
+    sleep $ADD_IAT2
 
     PHASE1=$(( ( RANDOM % 21 ) + 10 ))
     echo -e "${BLUE}[*] Phase 1: Establishing Entry Tier (Nodes 1-3). Jitter: ${PHASE1}s...${NC}"
     sleep $PHASE1
 
-    # EXTRA ENTROPY IAT BEFORE PHASE 2
     IAT_PRE_PHASE2=$(( ( RANDOM % 15 ) + 5 ))
     echo -e "${BLUE}[*] Extra entropy IAT delay: ${IAT_PRE_PHASE2}s...${NC}"
     sleep $IAT_PRE_PHASE2
@@ -93,10 +106,8 @@ if [ "$SYSTEM_WIDE" = false ]; then
 
     # FRESH TORRC GENERATION
     TORRC_FILE="$SHADOW_DIR/torrc"
-    rm -f "$TORRC_FILE" 2>/dev/null
-
     {
-        echo "SocksPort 127.0.0.1:9050"
+        echo "SocksPort 127.0.0.1:9050 IsolateDestAddr IsolateDestPort IsolateClientAddr IsolateClientProtocol IsolateSOCKSAuth"
         echo "ControlPort 127.0.0.1:9051"
         echo "CookieAuthentication 0"
         echo "DataDirectory $TOR_DATA"
@@ -108,6 +119,14 @@ if [ "$SYSTEM_WIDE" = false ]; then
         echo "EnforceDistinctSubnets 1"
         echo "NewCircuitPeriod 1"
         echo "MaxCircuitDirtiness 1"
+        echo "CircuitPadding 1"
+        echo "ConnectionPadding 1"
+        echo "ReducedConnectionPadding 0"
+        echo "ReducedCircuitPadding 0"
+        echo "UseBridges 1"
+        echo "ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy"
+        echo "Bridge obfs4 89.116.48.119:32278 EB1331E3372F12A1B42D2A8ECAF7064251C56B66 cert=pfjOWyOhh7bEcZUtKekBFbBPKSnhWjS4yyFG+/n0Foq3Bq6m8gsLecMHBf9K01a/wLiNAQ iat-mode=0"
+        echo "Bridge obfs4 100.8.170.63:50164 FBA329BA4F5FE648456C3A28BBAA3C7EBD118E08 cert=DKA6xS0N6c4I1CFVmWc/qgAEhPBgR/dPQyXhbkjt082Ka2xmq1pwSUpCPt626uuKW2Z1TA iat-mode=0"
     } > "$TORRC_FILE"
 
     echo -e "${GREEN}[+] Establishing 6-Hop Circuitry...${NC}"
@@ -115,33 +134,11 @@ if [ "$SYSTEM_WIDE" = false ]; then
     sleep 3
 fi
 
-# --- MSS CLAMPING (System Level) ---
-sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 860 2>/dev/null
+# --- MSS CLAMPING ---
+sudo iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1100 2>/dev/null
 
 # --- SOVEREIGN BROWSER HARDENING ---
 cp /opt/shadow-browser/shadow_rules.js "$BROWSER_PROFILE/user.js"
-{
-    echo "user_pref(\"privacy.resistFingerprinting\", true);"
-    echo "user_pref(\"privacy.resistFingerprinting.letterboxing\", true);"
-    echo "user_pref(\"webgl.disabled\", true);"
-    echo "user_pref(\"canvas.path.extract.max_retry\", 0);"
-    echo "user_pref(\"dom.webaudio.enabled\", false);"
-    echo "user_pref(\"privacy.reduceTimerPrecision\", true);"
-    echo "user_pref(\"privacy.abstractInterpreter.enabled\", false);"
-} >> "$BROWSER_PROFILE/user.js"
-
-# --- ENTROPY-BASED CIRCUIT ROTATION ENGINE ---
-(
-    while true; do
-        if pgrep -x "tor" > /dev/null; then
-            WAIT_TIME=$(shuf -i $ROT_MIN-$ROT_MAX -n 1)
-            sleep "$WAIT_TIME"
-            echo -e 'AUTHENTICATE ""\r\nSIGNAL NEWNYM\r\nQUIT' | nc 127.0.0.1 9051 > /dev/null 2>&1
-            echo -e "${BLUE}[*] Entropy Trigger: Rotating 6-Hop Identities (Interval: ${WAIT_TIME}s)${NC}"
-        fi
-        sleep 5
-    done
-) &
 
 # --- BEHAVIORAL ENTROPY ENGINE ---
 (
@@ -165,37 +162,39 @@ cp /opt/shadow-browser/shadow_rules.js "$BROWSER_PROFILE/user.js"
     done
 ) &
 
-# --- Launch Loop ---
+# --- Ultra-High Frequency Launch Loop (1ms Check) ---
 while true; do
     if pgrep -f "/opt/shadow-browser/mullvad-browser" > /dev/null; then
         if [ "$SYSTEM_WIDE" = false ]; then
-            if ! pgrep -f "shadow_noise" > /dev/null || ! pgrep -f "shadow_pulse" > /dev/null || ! pgrep -x "tor" > /dev/null; then
+            # VERIFYING ALL DEFENSIVE PILLARS 1000 TIMES PER SECOND
+            if ! pgrep -f "shadow_noise" > /dev/null || ! pgrep -f "shadow_pulse" > /dev/null || ! pgrep -x "tor" > /dev/null || ! systemctl is-active --quiet lokinet; then
+                echo -e "${RED}[!] ATOMIC TEARDOWN: ENGINE FAILURE DETECTED.${NC}"
                 sudo killall -9 start-mullvad-browser mullvad-browser tor 2>/dev/null
+                sudo systemctl stop lokinet
                 break
             fi
         fi
-        sleep 1
+        sleep 0.001
         continue
     fi
 
     echo -e "${BLUE}[!] ShadowNet Fully Active. Launching Shadow Browser...${NC}"
     export MOZ_APP_REMOTINGNAME="ShadowBrowser"
-    export MOZ_DISABLE_CONTENT_SANDBOX=0
     "$BROWSER_BIN" --profile "$BROWSER_PROFILE" --no-remote --name "ShadowBrowser" --class "ShadowBrowser" --icon "$ICON_URL" > /dev/null 2>&1 &
 
     sleep 8
 
     while pgrep -f "/opt/shadow-browser/mullvad-browser" > /dev/null; do
         if [ "$SYSTEM_WIDE" = false ]; then
-            if ! pgrep -f "shadow_noise" > /dev/null || ! pgrep -f "shadow_pulse" > /dev/null || ! pgrep -x "tor" > /dev/null; then
+            if ! pgrep -f "shadow_noise" > /dev/null || ! pgrep -f "shadow_pulse" > /dev/null || ! pgrep -x "tor" > /dev/null || ! systemctl is-active --quiet lokinet; then
                 sudo killall -9 start-mullvad-browser mullvad-browser tor 2>/dev/null
+                sudo systemctl stop lokinet
                 break 2
             fi
         fi
-        sleep 1
+        sleep 0.001
     done
 
-    sleep 3
     if ! pgrep -f "/opt/shadow-browser/mullvad-browser" > /dev/null; then
         break
     fi
@@ -204,8 +203,9 @@ done
 # --- Surgical Teardown ---
 if [ "$SYSTEM_WIDE" = false ]; then
     sudo killall -9 shadow_pulse shadow_noise tor 2>/dev/null
+    sudo systemctl stop lokinet
+    pkill -f "xdotool" 2>/dev/null
 fi
-sudo iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 860 2>/dev/null
-sudo swapoff -a && sudo swapon -a 2>/dev/null
+sudo iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1100 2>/dev/null
 sudo rm -rf "$SHADOW_DIR"
 echo -e "${RED}[-] ATOMIC TEARDOWN COMPLETE.${NC}"
