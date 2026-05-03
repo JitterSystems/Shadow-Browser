@@ -1,5 +1,8 @@
 # Shadow-Browser
-A high-tier custom implementation of the Mullvad Browser, routing all browser traffic through the ShadowNet. 
+A high-tier custom implementation of the Mullvad Browser, that uses the systemwide ShadowNet as it's only
+connection to the internet.
+
+NOTE! This browser can no longer operate if ShadowNet is not running system-wide. Start ShadowNet first and then open the Shadow Browser.
 
 For Kali Linux/Parrot OS (other linux distros)
 
@@ -8,7 +11,7 @@ the Shadow Browser. This will increase your OPSEC as you are jittering the jitte
 
 Shadow Browser: Signal Erasure Implementation
 
-Shadow Browser is a custom implementation of the Mullvad Browser, hardened with the ShadowNet Engine. While standard privacy browsers only focuses on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
+Shadow Browser is a custom implementation of the Mullvad Browser, hardened to use the ShadowNet Engine. While standard privacy browsers only focuses on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
 
 🛡️ Sovereign Integration
 
@@ -35,9 +38,7 @@ ShadowNet Signal Erasure
 
     Killswitch:
 
-    If tor, the cover traffic or the engine stops, the browser will be killed and exited immediately preventing any
-    data leaks. If you are using shadownet system wide and using the shadow browser at the same time, the browser will be killed
-    if the system wide shadownet is stopped as well.
+    If the ShadowNet ever stops or gets corrupted, the Browser's internet will be killed immediately preventing any sort of leaks.
 
     Mouse/Clicks/Scrolling/Typing:
 
@@ -95,12 +96,6 @@ Unlike the system-wide ShadowNet script, this implementation is surgically confi
     
     Does not modify host iptables or system-wide /etc/resolv.conf.
 
-    Isolated Binaries: 
-    
-    Uses unique process names (shadow_pulse, shadow_noise) to allow simultaneous use with other ShadowNet tools.
-    (You can use shadownet system-wide while using the shadow browser, they won't conflict because
-    the shadow browser's sockets are separte from the system-wide sockets)
-
 🚀 Installation & Usage
 
 Prerequisites: 
@@ -125,12 +120,6 @@ Place the mullvad-browser folder in the shadow-browser directory folder and then
     ./shadow_launcher.sh or bash shadow_launcher.sh
 
     PLEASE DO NOT USE SUDO TO LAUNCH BROWSER!!!
-
-    Can you use ShadowNet System-wide and the Shadow Browser at the same time?
-
-    Yes you can. If you are already running shadownet system-wide, the shadow browser will automatically
-    use the system-wide's engines instead of the local browser shadownet. If you are not running
-    shadownet already, the shadow browser will of course use the local shadownet within the configurations.
 
     Can you visit .onion websites?
 
