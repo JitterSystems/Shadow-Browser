@@ -21,6 +21,11 @@ to further improve it (browser wise)
 
 
 
+    Persona Entropy (Each Session)
+
+    For every session, you will be assigned 1 of three personas. "Deliberate", "Aggressive" or "Stochastic". Deliberate is a slow jitter persona, Aggressive is a faster jitter persona and Stochastic is completely randomized.
+
+
     Killswitch:
 
     If the ShadowNet ever stops or gets corrupted, the Browser's internet will be killed immediately preventing any sort of leaks.
