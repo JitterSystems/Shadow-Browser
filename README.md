@@ -6,9 +6,6 @@ NOTE! This browser can no longer operate if ShadowNet is not running system-wide
 
 For Kali Linux/Parrot OS (other linux distros)
 
-Note: For ultimate privacy and anonymity, route your whole system-wide traffic through ShadowNet and then use
-the Shadow Browser. This will increase your OPSEC as you are jittering the jitter.
-
 Shadow Browser: Signal Erasure Implementation
 
 Shadow Browser is a custom implementation of the Mullvad Browser, hardened to use the ShadowNet Engine. While standard privacy browsers only focuses on hiding your identity from websites, this implementation is engineered to erase your network signal from the infrastructure itself, defeating Global Passive Adversary (GPA) traffic analysis.
@@ -19,42 +16,14 @@ This project bridges the gap between industry-standard anti-fingerprinting and s
 
 ShadowNet Signal Erasure
 
-    Temporal Jitter: 
-    
-    Integrated C-engines inject Micro/Macro IAT (Inter-Arrival Time) randomization between each 
-    packets sent and their bursts, breaking the "mechanical" rhythm browser requests.
+Everything the ShadowNet is doing, will automatically anonymize the browser. The browser's added extra security features are just
+to further improve it (browser wise)
 
-    Shape Entropy: 
-    
-    Randomized each MTU packet sizes to prevent protocol identification through size-profiling.
 
-    DNS Requests/Data Entropy:
-    
-    Every dns requests received and sent has an entropy IAT.
-
-    6-Hop Routing: 
-    
-    Forced 6-node circuit depth for exponential path anonymity.
 
     Killswitch:
 
     If the ShadowNet ever stops or gets corrupted, the Browser's internet will be killed immediately preventing any sort of leaks.
-
-    Mouse/Clicks/Scrolling/Typing:
-
-    Added entropy IAT (Inter arrival time) to the key board typing input, added fake mouse movements and click delays and also
-    added entropy IAT to the scrolling and fake scroll movements.
-
-    Persona Entropy (Each Session)
-
-    For every session, you will be assigned 1 of three personas. "Deliberate", "Aggressive" or "Stochastic". Deliberate is a slow jitter persona, Aggressive is a faster jitter persona and Stochastic is completely randomized.
-
-    Temporal drift & clock skew erasure:
-
-    Added a jitter delay to every action you do within the browser, making it hard to figure out your system time
-    just from your browser events as well as your timing for the actions. 100ms has been applied to the rendering, this
-    makes it harder for website owners and the GPA/NSA to figure out your hardware based on the unique timing of your
-    CPU and RAM speed.
 
     WEB-GL protection & Canvas Spoofing:
 
@@ -69,12 +38,12 @@ ShadowNet Signal Erasure
 
     reports as a hardened linux machine.
 
-    Enhanced torrc config:
+    Using this browser, will make you a ghost when browsing due to ShadowNet running system-wide and because of the current Mullvad anti-fingerprint
+    protection and added canvas/web-gl and screen resolution protection. All of the features of ShadowNet like the packet randomization, jitters, lokinet cover traffic
+    etc are all anonymizing the browser by default.
 
-    NewCircuitPeriod 1, MaxCircuitDirtiness 1, EnforceDistinctSubnets 1 IsolateClientAddr, IsolateClientProtocol, IsolateSOCKSAuth, CircuitPadding 1, ConnectionPadding 1, ReducedConnectionPadding 0 & ReducedCircuitPadding 0 
-
-Mullvad Browser Foundation
-
+    
+    
     Custom Implementation: 
     
     Utilizes the official Mullvad Browser binary to inherit world-class 
