@@ -19,6 +19,8 @@ ShadowNet Signal Erasure
 Everything the ShadowNet is doing, will automatically anonymize the browser. The browser's added extra security features are just
 to further improve it (browser wise)
 
+NO CORE MODIFICATIONS HAS BEEN DONE TO AFFECT THE MULLVAD BROWSER
+
 
 
     Persona Entropy (Each Session)
