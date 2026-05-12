@@ -1,3 +1,5 @@
+STOP USING SHADOW BROWSER! Please check out the ShadowNet for now, but the browser must not be in-use anymore. Do not worry, Shadow Browser will be recommended to be used soon
+
 # Shadow-Browser
 A high-tier custom implementation of the Mullvad Browser, that uses the systemwide ShadowNet as it's only
 connection to the internet.
